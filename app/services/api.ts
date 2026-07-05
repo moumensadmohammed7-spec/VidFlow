@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:3001",
+  baseURL: "https://vidflow-eph9.onrender.com",
   timeout: 30000,
 });
 
