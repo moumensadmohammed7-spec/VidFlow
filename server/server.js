@@ -42,7 +42,9 @@ app.post("/download", async (req, res) => {
       webpage_url: info.webpage_url,
     });
   } catch (error) {
+    console.error("DOWNLOAD ERROR:");
     console.error(error);
+     console.error(error?.stack);
 
     res.status(500).json({
       success: false,
