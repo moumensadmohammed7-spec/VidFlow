@@ -81,13 +81,29 @@ app.post("/download-file", async (req, res) => {
         message: "Missing url or format_id",
       });
     }
+const info = await ytDlp(url, {
+  dumpSingleJson: true,
+  noWarnings: true,
+  noCallHome: true,
+});
 
-    return res.json({
-      success: true,
-      message: "Download endpoint is ready",
-      url,
-      format_id,
-    });
+const format = (info.formats || []).find(
+  (f) => f.format_id === format_id
+);
+
+if (!format || !format.url) {
+  return res.status(404).json({
+    success: false,
+    message: "Format not found",
+  });
+}
+
+return res.json({
+  success: true,
+  download_url: format.url,
+  filename: `${info.title}.${format.ext}`,
+});
+
   } catch (err) {
     res.status(500).json({
       success: false,

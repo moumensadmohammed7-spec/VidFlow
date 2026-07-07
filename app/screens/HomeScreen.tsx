@@ -5,15 +5,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  FlatList,
 } from "react-native";
 
 import LinkInput from "../components/LinkInput";
-import VideoCard from "../components/VideoCard";
 import API from "../services/api";
 
 export default function HomeScreen() {
   const [url, setUrl] = useState("");
-  const [video, setVideo] = useState<any>(null);
+  const [formats, setFormats] = useState<any[]>([]);
 
   const handleDownload = async () => {
     if (!url.trim()) {
@@ -22,14 +22,14 @@ export default function HomeScreen() {
     }
 
     try {
-      const response = await API.post("/download", {
-        url,
-      });
+      const response = await API.post("/download", { url });
 
-      setVideo(response.data);
+      if (response.data.success) {
+        setFormats(response.data.formats || []);
+      } else {
+        Alert.alert("Error", response.data.message);
+      }
     } catch (error: any) {
-      console.log(error);
-
       if (error?.response) {
         Alert.alert(
           "Server Error",
@@ -46,18 +46,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>🎬</Text>
-
-      <Text style={styles.title}>VidFlow</Text>
-
-      <Text style={styles.subtitle}>
-        Download videos quickly and easily
-      </Text>
-
-      <LinkInput
-        url={url}
-        setUrl={setUrl}
-      />
+      <LinkInput url={url} setUrl={setUrl} />
 
       <TouchableOpacity
         style={styles.button}
@@ -68,56 +57,66 @@ export default function HomeScreen() {
         </Text>
       </TouchableOpacity>
 
-      {video && (
-        <VideoCard
-          title={video.title}
-          thumbnail={video.thumbnail}
-          uploader={video.uploader}
-          duration={video.duration}
-        />
-      )}
+      <FlatList
+        data={formats}
+        keyExtractor={(item, index) =>
+          index.toString()
+        }
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View>
+              <Text style={styles.quality}>
+                {item.quality}
+              </Text>
+              <Text style={styles.ext}>
+                {item.ext.toUpperCase()}
+              </Text>
+            </View>
 
-      <View style={styles.cards}>
-        <View style={styles.card}>
-          <Text style={styles.cardIcon}>🛠️</Text>
-          <Text style={styles.cardText}>Tools</Text>
-        </View>
+<TouchableOpacity
+  style={styles.downloadBtn}
+  onPress={async () => {
+    try {
+      const response = await API.post("/download-file", {
+        url,
+        format_id: item.format_id,
+      });
 
-        <View style={styles.card}>
-          <Text style={styles.cardIcon}>📁</Text>
-          <Text style={styles.cardText}>Downloads</Text>
-        </View>
-      </View>
+      Alert.alert(
+        "Server Response",
+        JSON.stringify(response.data, null, 2)
+      );
+    } catch (error: any) {
+      if (error.response) {
+        Alert.alert(
+          "Server Error",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      } else {
+        Alert.alert(
+          "Connection Error",
+          error.message
+        );
+      }
+    }
+  }}
+>
+
+              <Text style={styles.downloadText}>
+                Download
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        contentContainerStyle={{ padding: 20 }}
+      />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    justifyContent: "center",
-    padding: 20,
-  },
-
-  logo: {
-    fontSize: 60,
-    textAlign: "center",
-    marginBottom: 10,
-  },
-
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#1E40AF",
-  },
-
-  subtitle: {
-    textAlign: "center",
-    color: "#666",
-    marginTop: 8,
-    marginBottom: 30,
   },
 
   button: {
@@ -125,38 +124,47 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
+    marginHorizontal: 20,
     marginTop: 20,
+    marginBottom: 10,
   },
 
   buttonText: {
     color: "#fff",
     fontSize: 18,
-    textAlign: "center",
     fontWeight: "bold",
-  },
-
-  cards: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 40,
   },
 
   card: {
-    width: "48%",
     backgroundColor: "#F5F7FB",
-    borderRadius: 18,
-    padding: 25,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
 
-  cardIcon: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
-
-  cardText: {
+  quality: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1E40AF",
+  },
+
+  ext: {
+    color: "#666",
+    marginTop: 4,
+  },
+
+  downloadBtn: {
+    backgroundColor: "#2563EB",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+
+  downloadText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
+
