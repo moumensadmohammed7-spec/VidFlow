@@ -71,6 +71,30 @@ app.post("/download", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
+app.post("/download-file", async (req, res) => {
+  try {
+    const { url, format_id } = req.body;
+
+    if (!url || !format_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing url or format_id",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Download endpoint is ready",
+      url,
+      format_id,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`VidFlow API running on port ${PORT}`);
