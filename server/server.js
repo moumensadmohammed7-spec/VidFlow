@@ -80,37 +80,33 @@ app.post("/download-file", async (req, res) => {
         message: "Missing url or format_id",
       });
     }
-const info = await ytDlp(url, {
-  dumpSingleJson: true,
-  noWarnings: true,
-  noCallHome: true,
-});
 
-const format = (info.formats || []).find(
-  (f) => f.format_id === format_id
-);
+    const output = await runYtDlp([
+      url,
+      "-f",
+      format_id,
+      "-g",
+      "--no-warnings",
+    ]);
 
-if (!format || !format.url) {
-  return res.status(404).json({
-    success: false,
-    message: "Format not found",
-  });
-}
+    const downloadUrl = output.trim();
 
-return res.json({
-  success: true,
-  download_url: format.url,
-  filename: `${info.title}.${format.ext}`,
-});
+    if (!downloadUrl) {
+      return res.status(404).json({
+        success: false,
+        message: "Download URL not found",
+      });
+    }
 
+    return res.json({
+      success: true,
+      download_url: downloadUrl,
+      filename: "video.mp4",
+    });
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err.toString(),
     });
   }
-});
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`VidFlow API running on port ${PORT}`);
 });
