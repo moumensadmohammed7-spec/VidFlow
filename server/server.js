@@ -29,7 +29,6 @@ app.post("/download", async (req, res) => {
     const info = await ytDlp(url, {
       dumpSingleJson: true,
       noWarnings: true,
-      noCallHome: true,
       skipDownload: true,
     });
 
