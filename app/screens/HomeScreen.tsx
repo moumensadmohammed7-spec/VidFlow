@@ -8,6 +8,10 @@ import {
   FlatList,
 } from "react-native";
 
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import * as MediaLibrary from "expo-media-library";
+
 import LinkInput from "../components/LinkInput";
 import API from "../services/api";
 
@@ -56,52 +60,78 @@ export default function HomeScreen() {
           Download
         </Text>
       </TouchableOpacity>
-
       <FlatList
         data={formats}
-        keyExtractor={(item, index) =>
-          index.toString()
-        }
+        keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View>
-              <Text style={styles.quality}>
-                {item.quality}
-              </Text>
-              <Text style={styles.ext}>
-                {item.ext.toUpperCase()}
-              </Text>
+              <Text style={styles.quality}>{item.quality}</Text>
+              <Text style={styles.ext}>{item.ext.toUpperCase()}</Text>
             </View>
 
-<TouchableOpacity
-  style={styles.downloadBtn}
-  onPress={async () => {
-    try {
-      const response = await API.post("/download-file", {
-        url,
-        format_id: item.format_id,
-      });
+            <TouchableOpacity
+              style={styles.downloadBtn}
+              onPress={async () => {
+                try {
+                  const response = await API.post("/download-file", {
+                    url,
+                    format_id: item.format_id,
+                  });
 
-      Alert.alert(
-        "Server Response",
-        JSON.stringify(response.data, null, 2)
-      );
-    } catch (error: any) {
-      if (error.response) {
-        Alert.alert(
-          "Server Error",
-          JSON.stringify(error.response.data, null, 2)
-        );
-      } else {
-        Alert.alert(
-          "Connection Error",
-          error.message
-        );
-      }
-    }
-  }}
->
+                  if (
+                    response.data.success &&
+                    response.data.download_url
+                  ) {
+                    console.log(response.data);
+                    const fileUri =
+                      FileSystem.cacheDirectory +
+                      response.data.filename;
 
+                    const result =
+                      await FileSystem.downloadAsync(
+                        response.data.download_url,
+                        fileUri
+                      );
+
+const { status } = await MediaLibrary.requestPermissionsAsync();
+
+if (status !== "granted") {
+  Alert.alert("Permission denied", "Storage permission is required.");
+  return;
+}
+
+await MediaLibrary.saveToLibraryAsync(result.uri);
+
+Alert.alert(
+  "Success",
+  "Video saved successfully to your gallery."
+);
+                  } else {
+                    Alert.alert(
+                      "Error",
+                      "Download URL not found."
+                    );
+                  }
+                } catch (error: any) {
+                  if (error?.response) {
+                    Alert.alert(
+                      "Server Error",
+                      JSON.stringify(
+                        error.response.data,
+                        null,
+                        2
+                      )
+                    );
+                  } else {
+                    Alert.alert(
+                      "Connection Error",
+                      error?.message || "Unknown error"
+                    );
+                  }
+                }
+              }}
+            >
               <Text style={styles.downloadText}>
                 Download
               </Text>
@@ -113,12 +143,12 @@ export default function HomeScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
   },
-
   button: {
     backgroundColor: "#2563EB",
     padding: 16,
@@ -128,13 +158,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
   },
-
   buttonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
-
   card: {
     backgroundColor: "#F5F7FB",
     borderRadius: 12,
@@ -144,27 +172,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   quality: {
     fontSize: 18,
     fontWeight: "bold",
   },
-
   ext: {
     color: "#666",
     marginTop: 4,
   },
-
   downloadBtn: {
     backgroundColor: "#2563EB",
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 10,
   },
-
   downloadText: {
     color: "#fff",
     fontWeight: "bold",
   },
 });
-

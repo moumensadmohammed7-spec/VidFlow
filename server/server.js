@@ -1,7 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const ytDlp = require("yt-dlp-exec");
-
+const { execFile } = require("child_process");
+function runYtDlp(args) {
+  return new Promise((resolve, reject) => {
+    execFile(
+      "/data/data/com.termux/files/usr/bin/yt-dlp",
+      args,
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(stderr || error.message);
+          return;
+        }
+        resolve(stdout);
+      }
+    );
+  });
+}
 const app = express();
 
 app.use(cors());
@@ -26,12 +41,15 @@ app.post("/download", async (req, res) => {
       });
     }
 
-    const info = await ytDlp(url, {
-      dumpSingleJson: true,
-      noWarnings: true,
-      skipDownload: true,
-    });
+const output = await runYtDlp([
+  url,
+  "--dump-single-json",
+  "--no-warnings",
+  "--no-call-home",
+  "--skip-download",
+]);
 
+const info = JSON.parse(output);
     const formats = (info.formats || [])
       .filter(
         (f) =>
@@ -80,16 +98,17 @@ app.post("/download-file", async (req, res) => {
         message: "Missing url or format_id",
       });
     }
-
-    const info = await ytDlp(url, {
-      dumpSingleJson: true,
-      noWarnings: true,
-      skipDownload: true,
-    });
-
-    const format = (info.formats || []).find(
-      (f) => f.format_id === format_id
-    );
+const output = await runYtDlp([
+  url,
+  "--dump-single-json",
+  "--no-warnings",
+  "--no-call-home",
+  "--skip-download",
+]);
+const info = JSON.parse(output);
+const format = (info.formats || []).find(
+  (f) => f.format_id === format_id
+);
 
     if (!format || !format.url) {
       return res.status(404).json({
