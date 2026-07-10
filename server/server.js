@@ -1,23 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const ytDlp = require("yt-dlp-exec");
-const { execFile } = require("child_process");
 
-function runYtDlp(args) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      "yt-dlp",
-      args,
-      (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message));
-          return;
-        }
-        resolve(stdout);
-      }
-    );
-  });
-}
 const app = express();
 
 app.use(cors());
@@ -97,32 +81,32 @@ app.post("/download-file", async (req, res) => {
       });
     }
 
-    const output = await runYtDlp([
-      url,
-      "-f",
-      format_id,
-      "-g",
-      "--no-warnings",
-    ]);
+    const info = await ytDlp(url, {
+      dumpSingleJson: true,
+      noWarnings: true,
+      skipDownload: true,
+    });
 
-    const downloadUrl = output.trim();
+    const format = (info.formats || []).find(
+      (f) => f.format_id === format_id
+    );
 
-    if (!downloadUrl) {
+    if (!format || !format.url) {
       return res.status(404).json({
         success: false,
-        message: "Download URL not found",
+        message: "Format not found",
       });
     }
 
     return res.json({
       success: true,
-      download_url: downloadUrl,
-      filename: "video.mp4",
+      download_url: format.url,
+      filename: `${info.title}.${format.ext}`,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: err.toString(),
+      message: err.message,
     });
   }
 });
