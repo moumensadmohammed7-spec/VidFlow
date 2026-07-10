@@ -1,7 +1,23 @@
 const express = require("express");
 const cors = require("cors");
 const ytDlp = require("yt-dlp-exec");
+const { execFile } = require("child_process");
 
+function runYtDlp(args) {
+  return new Promise((resolve, reject) => {
+    execFile(
+      "yt-dlp",
+      args,
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(stderr || error.message));
+          return;
+        }
+        resolve(stdout);
+      }
+    );
+  });
+}
 const app = express();
 
 app.use(cors());
@@ -109,4 +125,7 @@ app.post("/download-file", async (req, res) => {
       message: err.toString(),
     });
   }
+});
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`VidFlow API running on port ${PORT}`);
 });
