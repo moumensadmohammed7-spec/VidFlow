@@ -5,7 +5,7 @@ const { execFile } = require("child_process");
 function runYtDlp(args) {
   return new Promise((resolve, reject) => {
     execFile(
-      "/data/data/com.termux/files/usr/bin/yt-dlp",
+        "yt-dlp",
       args,
       (error, stdout, stderr) => {
         if (error) {
