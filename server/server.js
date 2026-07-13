@@ -1,134 +1,20 @@
 const express = require("express");
 const cors = require("cors");
-const ytDlp = require("yt-dlp-exec");
-const { execFile } = require("child_process");
-function runYtDlp(args) {
-  return new Promise((resolve, reject) => {
-    execFile(
-        "yt-dlp",
-      args,
-      (error, stdout, stderr) => {
-        if (error) {
-          reject(stderr || error.message);
-          return;
-        }
-        resolve(stdout);
-      }
-    );
-  });
-}
+const morgan = require("morgan");
+require("dotenv").config();
+
+const routes = require("./routes");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(morgan("dev"));
 
-app.get("/", (req, res) => {
-  res.json({
-    app: "VidFlow API",
-    status: "online",
-    version: "2.0.0",
-  });
-});
-
-app.post("/download", async (req, res) => {
-  try {
-    const { url } = req.body;
-
-    if (!url) {
-      return res.status(400).json({
-        success: false,
-        message: "No URL provided",
-      });
-    }
-
-const output = await runYtDlp([
-  url,
-  "--dump-single-json",
-  "--no-warnings",
-  "--no-call-home",
-  "--skip-download",
-]);
-
-const info = JSON.parse(output);
-    const formats = (info.formats || [])
-      .filter(
-        (f) =>
-          f.vcodec !== "none" &&
-          f.height &&
-          f.url
-      )
-      .map((f) => ({
-        format_id: f.format_id,
-        quality: `${f.height}p`,
-        ext: f.ext,
-        fps: f.fps,
-        filesize: f.filesize || null,
-      }));
-
-    res.json({
-      success: true,
-      title: info.title,
-      thumbnail: info.thumbnail,
-      duration: info.duration,
-      uploader: info.uploader,
-      webpage_url: info.webpage_url,
-      formats,
-    });
-  } catch (error) {
-    console.error("DOWNLOAD ERROR:");
-    console.error(error);
-    console.error(error?.stack);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to extract video information",
-      error: error.message,
-    });
-  }
-});
+app.use("/", routes);
 
 const PORT = process.env.PORT || 3001;
-app.post("/download-file", async (req, res) => {
-  try {
-    const { url, format_id } = req.body;
 
-    if (!url || !format_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing url or format_id",
-      });
-    }
-const output = await runYtDlp([
-  url,
-  "--dump-single-json",
-  "--no-warnings",
-  "--no-call-home",
-  "--skip-download",
-]);
-const info = JSON.parse(output);
-const format = (info.formats || []).find(
-  (f) => f.format_id === format_id
-);
-
-    if (!format || !format.url) {
-      return res.status(404).json({
-        success: false,
-        message: "Format not found",
-      });
-    }
-
-    return res.json({
-      success: true,
-      download_url: format.url,
-      filename: `${info.title}.${format.ext}`,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`VidFlow API running on port ${PORT}`);
+  console.log(`🚀 VidFlow Backend running on port ${PORT}`);
 });
