@@ -33,6 +33,8 @@ exports.getVideoInfo = async (url) => {
     if (message.includes("Your IP address is blocked")) {
       throw new Error("TikTok temporarily rejected the request.");
     }
+
     console.error("yt-dlp error:", err.message);
-      throw new Error("Unable to retrieve video information.");
-     };
+    throw new Error("Unable to retrieve video information.");
+  }
+};
