@@ -1,30 +1,11 @@
-const { execFile } = require("child_process");
-
-function runYtDlp(args) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      "yt-dlp",
-      args,
-      (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message));
-          return;
-        }
-        resolve(stdout);
-      }
-    );
-  });
-}
+const ytDlp = require("yt-dlp-exec");
 
 exports.getVideoInfo = async (url) => {
-  const output = await runYtDlp([
-    url,
-    "--dump-single-json",
-    "--no-warnings",
-    "--skip-download",
-  ]);
-
-  const info = JSON.parse(output);
+  const info = await ytDlp(url, {
+    dumpSingleJson: true,
+    noWarnings: true,
+    skipDownload: true,
+  });
 
   return {
     success: true,
