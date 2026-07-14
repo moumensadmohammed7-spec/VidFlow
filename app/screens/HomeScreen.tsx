@@ -26,8 +26,7 @@ export default function HomeScreen() {
     }
 
     try {
-      const response = await API.post("/download", { url });
-
+       const response = await API.post("/video/info", { url });
       if (response.data.success) {
         setFormats(response.data.formats || []);
       } else {
