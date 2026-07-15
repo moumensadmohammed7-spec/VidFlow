@@ -18,7 +18,7 @@ import API from "../services/api";
 export default function HomeScreen() {
   const [url, setUrl] = useState("");
   const [formats, setFormats] = useState<any[]>([]);
-
+  const [videoInfo, setVideoInfo] = useState<any>(null);
   const handleDownload = async () => {
     if (!url.trim()) {
       Alert.alert("Error", "Please paste a video link first.");
@@ -28,7 +28,8 @@ export default function HomeScreen() {
     try {
        const response = await API.post("/video/info", { url });
       if (response.data.success) {
-        setFormats(response.data.formats || []);
+  setVideoInfo(response.data);
+  setFormats(response.data.formats || []);
       } else {
         Alert.alert("Error", response.data.message);
       }
