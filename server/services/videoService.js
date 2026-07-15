@@ -2,11 +2,18 @@ const ytDlp = require("yt-dlp-exec");
 
 exports.getVideoInfo = async (url) => {
   try {
-    const info = await ytDlp(url, {
-      dumpSingleJson: true,
-      noWarnings: true,
-      skipDownload: true,
-    });
+const options = {
+  dumpSingleJson: true,
+  noWarnings: true,
+  skipDownload: true,
+};
+
+if (process.env.YTDLP_COOKIES) {
+  options.cookies = process.env.YTDLP_COOKIES;
+}
+
+const info = await ytDlp(url, options);
+
 
     return {
       success: true,
